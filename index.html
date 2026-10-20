@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123c2f">
+  <title>Absensi QR | SMA Negeri 1 Terara</title>
+  <!-- Library via CDN. GitHub Pages memerlukan koneksi internet untuk memuat library ini. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root{--green:#123c2f;--green2:#1d604a;--mint:#e9f5ee;--gold:#e8b75b;--ink:#18251f;--muted:#68766e;--line:#e1e9e3;--paper:#fff;--bg:#f4f7f4;--red:#b93c42;--blue:#3166b2}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+    button,input,select{font:inherit}button{cursor:pointer}.shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+    aside{background:var(--green);color:white;padding:24px 16px;display:flex;flex-direction:column;gap:24px}
+    .brand{display:flex;gap:12px;align-items:center;padding:4px 8px}.crest{width:42px;height:42px;border-radius:13px;background:var(--gold);color:var(--green);display:grid;place-items:center;font-weight:900;font-size:20px}
+    .brand b{display:block;font-size:14px;line-height:1.35}.brand small{opacity:.7;font-size:11px}.nav-label{font-size:10px;letter-spacing:1.6px;color:#a8c5b5;padding:0 12px}
+    .nav{display:grid;gap:7px}.nav button{border:0;text-align:left;background:transparent;color:#d7e6dc;border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;font-size:13px}
+    .nav button.active,.nav button:hover{background:#ffffff1c;color:#fff}.nav .ico{width:22px;text-align:center;font-size:17px}.side-note{margin-top:auto;border-top:1px solid #ffffff24;padding:16px 8px;color:#b6cfc0;font-size:11px;line-height:1.7}
+    main{min-width:0}.topbar{height:78px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 32px;gap:14px}
+    .eyebrow{color:var(--muted);font-size:11px}.topbar h1{font-size:19px;margin:3px 0 0}.top-right{display:flex;align-items:center;gap:12px}.date-chip{border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12px;color:var(--muted);background:#fff}
+    .avatar{background:var(--mint);color:var(--green);font-weight:800;border-radius:50%;width:36px;height:36px;display:grid;place-items:center;font-size:12px}
+    .content{padding:28px 32px;max-width:1500px;margin:auto}.welcome{display:flex;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:24px}.welcome h2{font-size:25px;letter-spacing:-.7px;margin:5px 0}.welcome p{color:var(--muted);font-size:13px;margin:0}.tag{font-size:11px;border-radius:99px;background:var(--mint);color:var(--green2);padding:7px 10px;font-weight:700}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:18px}.stat,.panel{background:var(--paper);border:1px solid var(--line);border-radius:15px;box-shadow:0 3px 14px #173d2910}
+    .stat{padding:19px}.stat-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}.stat-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--mint);font-size:17px}.stat strong{display:block;font-size:29px;letter-spacing:-1px;margin:12px 0 4px}.stat small{font-size:11px;color:var(--muted)}
+    .grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,1fr);gap:18px;margin-bottom:18px}.panel{padding:21px;min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px}.panel h3{font-size:14px;margin:0}.panel-head p{font-size:11px;color:var(--muted);margin:5px 0 0}.chart-box{height:250px;position:relative}.quick{display:grid;gap:10px}.quick button{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:#fff;padding:13px;border-radius:11px;text-align:left}.quick button:hover{border-color:#9dc7ad;background:#fbfefb}.quick .qicon{width:38px;height:38px;display:grid;place-items:center;background:var(--mint);border-radius:10px}.quick b{display:block;font-size:12px}.quick small{color:var(--muted);font-size:11px}
+    .table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;background:#f8faf8}td,th{padding:12px 11px;border-bottom:1px solid var(--line);white-space:nowrap}tbody tr:last-child td{border-bottom:0}.student-cell{display:flex;align-items:center;gap:9px}.mini-avatar{width:29px;height:29px;border-radius:9px;background:#edf3ef;display:grid;place-items:center;font-weight:800;color:var(--green);font-size:10px}.pill{padding:5px 8px;border-radius:99px;font-size:10px;font-weight:700}.hadir{background:#e4f6e9;color:#267247}.izin{background:#fff2d6;color:#94661a}.sakit{background:#e7efff;color:#315eaa}.alpa{background:#fde8e8;color:#ad343a}
+    .btn{border:0;border-radius:9px;padding:10px 14px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px}.btn-primary{background:var(--green);color:#fff}.btn-primary:hover{background:var(--green2)}.btn-light{background:#eef4ef;color:var(--green)}.btn-danger{background:#fff0f0;color:var(--red)}.btn-small{padding:6px 9px;font-size:11px}.btn:disabled{opacity:.45;cursor:not-allowed}
+    .page{display:none}.page.active{display:block}.filters{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}.field{display:grid;gap:6px;min-width:0}.field label{font-size:11px;color:var(--muted);font-weight:700}.field input,.field select,.field textarea{width:100%;border:1px solid #d9e3dc;border-radius:9px;padding:11px 12px;background:#fff;color:var(--ink);outline:none}.field input:focus,.field select:focus{border-color:var(--green2);box-shadow:0 0 0 3px #1d604a16}.field.grow{flex:1;min-width:180px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}.notice{border-radius:10px;background:#fff7df;color:#785a16;padding:12px 14px;font-size:12px;line-height:1.6;margin-bottom:16px}.empty{padding:30px;text-align:center;color:var(--muted);font-size:12px}.two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.8fr);gap:18px}.scan-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.8fr);gap:18px}.scanner{max-width:520px;margin:0 auto}.scan-status{background:var(--mint);color:var(--green);border-radius:10px;padding:12px;font-size:12px;margin-top:12px}.qr-card{border:1px dashed #cbdacf;border-radius:12px;padding:20px;text-align:center}.qr-card #qrcode{display:flex;justify-content:center;margin:15px auto}.login-wrap{max-width:420px;margin:25px auto}.login-mark{text-align:center;margin-bottom:20px}.login-mark .crest{margin:auto;width:54px;height:54px;font-size:25px}.login-mark h2{margin:12px 0 5px}.login-mark p{color:var(--muted);font-size:12px}.hidden{display:none!important}.toast{position:fixed;bottom:22px;right:22px;z-index:20;background:#173d2d;color:#fff;padding:13px 17px;border-radius:10px;box-shadow:0 8px 30px #0002;font-size:12px;max-width:360px}.toast.error{background:#9d3035}.muted{color:var(--muted)}.footer-note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:14px}
+    @media(max-width:1000px){.shell{grid-template-columns:210px minmax(0,1fr)}.content{padding:22px}.topbar{padding:0 22px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2,.two-col,.scan-layout{grid-template-columns:1fr}}
+    @media(max-width:680px){.shell{display:block}aside{padding:12px;gap:12px}.brand{padding:2px 4px}.nav-label,.side-note{display:none}.nav{display:flex;overflow:auto;gap:5px}.nav button{white-space:nowrap;padding:9px 10px;font-size:11px}.nav .ico{font-size:14px;width:auto}.topbar{height:65px;padding:0 15px}.topbar h1{font-size:15px}.date-chip{display:none}.content{padding:18px 13px}.welcome{align-items:flex-start;flex-direction:column}.welcome h2{font-size:22px}.stats{gap:9px}.stat{padding:13px}.stat strong{font-size:24px}.stat-top{font-size:10px}.stat-icon{width:29px;height:29px}.panel{padding:15px}.chart-box{height:220px}.form-grid{grid-template-columns:1fr}.top-right{gap:7px}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="brand"><div class="crest">S</div><div><b>ABSENSI QR</b><small>SMA NEGERI 1 TERARA</small></div></div>
+    <div class="nav-label">MENU UTAMA</div>
+    <nav class="nav" aria-label="Navigasi utama">
+      <button class="active" data-page="dashboard"><span class="ico">▦</span>Dashboard</button>
+      <button data-page="scan"><span class="ico">▣</span>Scan QR Code</button>
+      <button data-page="students"><span class="ico">♙</span>Data Siswa</button>
+      <button data-page="reports"><span class="ico">▤</span>Rekap Laporan</button>
+      <button data-page="settings"><span class="ico">⚙</span>Lembaga</button>
+      <button data-page="admin"><span class="ico">♧</span>Login Admin</button>
+    </nav>
+    <div class="side-note">Sistem absensi siswa berbasis QR Code.<br>Data dan pengaturan dikelola oleh administrator sekolah.</div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <div><div class="eyebrow">Sistem Informasi Sekolah / Kehadiran</div><h1 id="pageTitle">Dashboard Kehadiran</h1></div>
+      <div class="top-right"><div class="date-chip" id="todayLabel">Memuat tanggal...</div><div class="avatar" id="userAvatar">ST</div></div>
+    </header>
+    <div class="content">
+      <section class="page active" id="page-dashboard">
+        <div class="welcome"><div><div class="eyebrow">RINGKASAN SEKOLAH</div><h2>Selamat datang 👋</h2><p>Pantau kehadiran siswa SMA Negeri 1 Terara hari ini.</p></div><span class="tag" id="connectionBadge">Mode demo lokal</span></div>
+        <div class="stats">
+          <div class="stat"><div class="stat-top">Total Siswa <span class="stat-icon">♙</span></div><strong id="statStudents">0</strong><small>Siswa terdaftar</small></div>
+          <div class="stat"><div class="stat-top">Hadir Hari Ini <span class="stat-icon">✓</span></div><strong id="statPresent">0</strong><small id="presentSub">0% dari total siswa</small></div>
+          <div class="stat"><div class="stat-top">Izin / Sakit <span class="stat-icon">✚</span></div><strong id="statExcused">0</strong><small>Izin dan sakit tercatat</small></div>
+          <div class="stat"><div class="stat-top">Belum Hadir <span class="stat-icon">◷</span></div><strong id="statAbsent">0</strong><small>Belum tercatat hadir/izin/sakit</small></div>
+        </div>
+        <div class="grid2">
+          <div class="panel"><div class="panel-head"><div><h3>Statistik Kehadiran</h3><p>Ringkasan berdasarkan catatan absensi hari ini</p></div><span class="tag">Hari ini</span></div><div class="chart-box"><canvas id="attendanceChart"></canvas></div></div>
+          <div class="panel"><div class="panel-head"><div><h3>Akses Cepat</h3><p>Pilih tindakan yang ingin dilakukan</p></div></div><div class="quick">
+            <button data-go="scan"><span class="qicon">▣</span><span><b>Mulai Scan QR</b><small>Catat kehadiran siswa</small></span></button>
+            <button data-go="students"><span class="qicon">♙</span><span><b>Kelola Data Siswa</b><small>Tambah atau perbarui siswa</small></span></button>
+            <button data-go="reports"><span class="qicon">▤</span><span><b>Cetak Rekap</b><small>Unduh laporan ke PDF</small></span></button>
+          </div></div>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Aktivitas Kehadiran Terbaru</h3><p>Catatan absensi pada tanggal hari ini</p></div><button class="btn btn-light btn-small" data-go="reports">Lihat semua →</button></div><div class="table-wrap"><table><thead><tr><th>Nama siswa</th><th>NIS</th><th>Kelas</th><th>Waktu</th><th>Status</th></tr></thead><tbody id="recentRows"></tbody></table></div></div>
+      </section>
+
+      <section class="page" id="page-scan">
+        <div class="welcome"><div><h2>Scan QR Code Siswa</h2><p>Arahkan kamera ke QR Code yang dimiliki siswa.</p></div><span class="tag">Pencatatan kehadiran</span></div>
+        <div class="notice">Pastikan kamera diizinkan pada browser. Di GitHub Pages, akses kamera memerlukan HTTPS. QR Code siswa berisi NIS sebagai identitas.</div>
+        <div class="scan-layout">
+          <div class="panel"><div class="panel-head"><div><h3>Pemindai QR Code</h3><p>Gunakan kamera perangkat atau masukkan NIS secara manual.</p></div></div>
+            <div class="scanner"><div id="reader"></div><div class="form-actions" style="justify-content:center"><button class="btn btn-primary" id="startScan">▶ Mulai kamera</button><button class="btn btn-light" id="stopScan">■ Hentikan</button></div></div>
+            <div class="field" style="margin-top:20px"><label for="manualNis">Input NIS manual</label><div style="display:flex;gap:8px"><input id="manualNis" placeholder="Masukkan NIS siswa"><button class="btn btn-primary" id="manualSubmit">Catat hadir</button></div></div>
+            <div class="scan-status" id="scanStatus">Pemindai siap. Pilih “Mulai kamera” untuk memulai.</div>
+          </div>
+          <div class="panel"><div class="panel-head"><div><h3>QR Code Siswa</h3><p>Buat dan cetak QR Code untuk kartu siswa.</p></div></div>
+            <div class="field"><label for="qrStudentSelect">Pilih siswa</label><select id="qrStudentSelect"></select></div>
+            <div class="qr-card"><div id="qrcode"></div><b id="qrStudentName">Pilih siswa</b><div class="muted" id="qrStudentInfo" style="font-size:11px;margin-top:5px">QR Code berdasarkan NIS</div><div class="form-actions" style="justify-content:center"><button class="btn btn-light" id="printQr">Cetak QR</button></div></div>
+            <p class="footer-note">QR Code hanya berisi NIS. Untuk mencegah titip absen, petugas tetap perlu memverifikasi identitas siswa. Jangan menaruh data sensitif di QR.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-students">
+        <div class="welcome"><div><h2>Data Siswa</h2><p>Kelola identitas siswa yang terdaftar pada sistem.</p></div><button class="btn btn-primary" id="addStudentBtn">＋ Tambah Siswa</button></div>
+        <div class="panel">
+          <div class="filters"><div class="field grow"><label for="studentSearch">Cari siswa</label><input id="studentSearch" placeholder="Cari nama atau NIS..."></div><div class="field"><label for="classFilter">Filter kelas</label><select id="classFilter"><option value="">Semua kelas</option></select></div></div>
+          <div id="studentFormWrap" class="hidden" style="border:1px solid var(--line);border-radius:12px;padding:17px;margin-bottom:18px"><h3 id="studentFormTitle" style="margin:0 0 15px">Tambah siswa</h3><form id="studentForm"><input type="hidden" id="editStudentId"><div class="form-grid"><div class="field"><label for="studentNis">NIS *</label><input id="studentNis" required maxlength="30" placeholder="Contoh: 10234"></div><div class="field"><label for="studentName">Nama lengkap *</label><input id="studentName" required maxlength="120" placeholder="Nama siswa"></div><div class="field"><label for="studentClass">Kelas *</label><input id="studentClass" required maxlength="30" placeholder="Contoh: X-A"></div><div class="field"><label for="studentGender">Jenis kelamin</label><select id="studentGender"><option value="">Pilih</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div></div><div class="form-actions"><button type="button" class="btn btn-light" id="cancelStudent">Batal</button><button type="submit" class="btn btn-primary">Simpan siswa</button></div></form></div>
+          <div class="table-wrap"><table><thead><tr><th>Nama siswa</th><th>NIS</th><th>Kelas</th><th>JK</th><th>QR</th><th>Aksi</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+          <div class="footer-note">Penambahan, perubahan, dan penghapusan data hanya tersedia setelah admin login.</div>
+        </div>
+      </section>
+
+      <section class="page" id="page-reports">
+        <div class="welcome"><div><h2>Rekap Laporan Kehadiran</h2><p>Filter data dan cetak laporan ke format PDF.</p></div><button class="btn btn-primary" id="exportPdf">↓ Unduh PDF</button></div>
+        <div class="panel">
+          <div class="filters"><div class="field"><label for="reportDate">Tanggal</label><input type="date" id="reportDate"></div><div class="field"><label for="reportClass">Kelas</label><select id="reportClass"><option value="">Semua kelas</option></select></div><div class="field"><label for="reportStatus">Status</label><select id="reportStatus"><option value="">Semua status</option><option>Hadir</option><option>Izin</option><option>Sakit</option><option>Alpa</option></select></div><div class="field" style="align-self:end"><button class="btn btn-light" id="applyReport">Terapkan filter</button></div></div>
+          <div class="stats" style="margin-top:5px"><div class="stat"><div class="stat-top">Hadir</div><strong id="repHadir">0</strong></div><div class="stat"><div class="stat-top">Izin</div><strong id="repIzin">0</strong></div><div class="stat"><div class="stat-top">Sakit</div><strong id="repSakit">0</strong></div><div class="stat"><div class="stat-top">Alpa / belum tercatat</div><strong id="repAlpa">0</strong></div></div>
+          <div class="table-wrap"><table><thead><tr><th>No.</th><th>NIS</th><th>Nama siswa</th><th>Kelas</th><th>Tanggal</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="reportRows"></tbody></table></div>
+        </div>
+        <p class="footer-note">PDF dihasilkan pada perangkat Anda. Rekap mencakup siswa pada kelas/tanggal terpilih. Status Alpa adalah siswa yang belum memiliki catatan hadir, izin, atau sakit pada tanggal tersebut.</p>
+      </section>
+
+      <section class="page" id="page-settings">
+        <div class="welcome"><div><h2>Pengaturan Lembaga</h2><p>Identitas sekolah yang ditampilkan pada dashboard dan laporan.</p></div></div>
+        <div class="two-col"><div class="panel"><div class="panel-head"><div><h3>Identitas Sekolah</h3><p>Ubah nama dan detail lembaga.</p></div></div>
+          <form id="schoolForm"><div class="field" style="margin-bottom:13px"><label for="schoolName">Nama sekolah</label><input id="schoolName" value="SMA Negeri 1 Terara" required></div><div class="field" style="margin-bottom:13px"><label for="schoolAddress">Alamat sekolah</label><input id="schoolAddress" placeholder="Alamat sekolah"></div><div class="field" style="margin-bottom:13px"><label for="schoolYear">Tahun pelajaran</label><input id="schoolYear" placeholder="2026/2027"></div><div class="form-actions"><button class="btn btn-primary" type="submit">Simpan pengaturan</button></div></form>
+        </div><div class="panel"><h3>Konfigurasi Supabase</h3><p class="muted" style="font-size:12px;line-height:1.7">Hubungkan aplikasi ke proyek Supabase agar data tersimpan online dan dapat digunakan dari beberapa perangkat.</p><div class="field" style="margin-bottom:12px"><label for="supabaseUrl">Project URL</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co"></div><div class="field" style="margin-bottom:12px"><label for="supabaseKey">Publishable / anon key</label><input id="supabaseKey" placeholder="sb_publishable_... atau anon key"></div><button class="btn btn-primary" id="connectSupabase">Hubungkan Supabase</button><p class="footer-note">Masukkan hanya publishable/anon key di frontend. Jangan pernah memasukkan service_role key. Keamanan tetap harus diatur melalui Row Level Security (RLS) dan kebijakan database.</p></div></div>
+      </section>
+
+      <section class="page" id="page-admin">
+        <div class="login-wrap">
+          <div class="login-mark"><div class="crest">S</div><h2 id="authHeading">Login Administrator</h2><p>Masuk untuk mengelola data siswa dan pengaturan sekolah.</p></div>
+          <div class="panel" id="loginPanel"><form id="loginForm"><div class="field" style="margin-bottom:14px"><label for="adminEmail">Email admin</label><input id="adminEmail" type="email" required placeholder="admin@sekolah.sch.id" autocomplete="username"></div><div class="field" style="margin-bottom:16px"><label for="adminPassword">Password</label><input id="adminPassword" type="password" required placeholder="Masukkan password" autocomplete="current-password"></div><button type="submit" class="btn btn-primary" style="width:100%">Login Admin</button><p class="footer-note">Buat akun admin melalui Supabase Authentication terlebih dahulu setelah Supabase dikonfigurasi.</p></form></div>
+          <div class="panel hidden" id="loggedPanel"><h3>Admin sudah login</h3><p id="adminIdentity" class="muted" style="font-size:12px"></p><button class="btn btn-danger" id="logoutBtn">Logout Admin</button></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const timeNow = () => new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let supabaseClient = null, adminUser = null, scanner = null, chart = null;
+  let students = [], attendance = [], school = {name:'SMA Negeri 1 Terara',address:'',year:'2026/2027'};
+  let storageMode = 'local';
+
+  const loadLocal = () => {
+    try {
+      students = JSON.parse(localStorage.getItem('terara_students') || '[]');
+      attendance = JSON.parse(localStorage.getItem('terara_attendance') || '[]');
+      school = {...school, ...JSON.parse(localStorage.getItem('terara_school') || '{}')};
+    } catch(e) { students=[]; attendance=[]; }
+    if (!students.length) {
+      students = [
+        {id:'demo-1',nis:'1001',name:'Ahmad Fauzi',class_name:'X-A',gender:'L'},
+        {id:'demo-2',nis:'1002',name:'Siti Rahma',class_name:'X-A',gender:'P'},
+        {id:'demo-3',nis:'1003',name:'Muhammad Rizki',class_name:'X-B',gender:'L'},
+        {id:'demo-4',nis:'1004',name:'Nur Aisyah',class_name:'X-B',gender:'P'},
+        {id:'demo-5',nis:'1005',name:'Putri Amelia',class_name:'XI-A',gender:'P'}
+      ];
+      localStorage.setItem('terara_students',JSON.stringify(students));
+    }
+    if (!attendance.length) {
+      attendance = [{id:'demo-att-1',student_id:'demo-1',nis:'1001',date:today(),time:'07:02',status:'Hadir'}];
+      localStorage.setItem('terara_attendance',JSON.stringify(attendance));
+    }
+    $('schoolName').value=school.name; $('schoolAddress').value=school.address; $('schoolYear').value=school.year;
+  };
+  const saveLocal = () => {
+    localStorage.setItem('terara_students',JSON.stringify(students));
+    localStorage.setItem('terara_attendance',JSON.stringify(attendance));
+    localStorage.setItem('terara_school',JSON.stringify(school));
+  };
+  const notify = (msg, error=false) => {
+    const el=$('toast'); el.textContent=msg; el.classList.remove('hidden','error'); if(error)el.classList.add('error');
+    setTimeout(()=>el.classList.add('hidden'),3500);
+  };
+  const isAdmin = () => !!adminUser;
+  const requireAdmin = () => { if(!isAdmin()){notify('Silakan login sebagai admin terlebih dahulu.',true);go('admin');return false;} return true; };
+  const setBadge = () => { $('connectionBadge').textContent=storageMode==='supabase'?'Supabase terhubung':'Mode demo lokal'; };
+  function go(page) {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    $('page-'+page).classList.add('active');
+    document.querySelectorAll('.nav button[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
+    const titles={dashboard:'Dashboard Kehadiran',scan:'Scan QR Code',students:'Data Siswa',reports:'Rekap Laporan',settings:'Pengaturan Lembaga',admin:'Login Admin'};
+    $('pageTitle').textContent=titles[page]||'Absensi QR';
+    if(page==='scan')refreshQrSelect();
+    if(page==='reports')renderReport();
+    if(page==='dashboard')renderDashboard();
+    if(page==='students')renderStudents();
+    if(page==='admin')renderAuth();
+  }
+  document.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+  document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
+  $('todayLabel').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+
+  async function connectSupabase(url,key) {
+    if(!window.supabase?.createClient) throw new Error('Library Supabase belum termuat. Periksa koneksi internet.');
+    supabaseClient=window.supabase.createClient(url.trim(),key.trim());
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error)throw error;
+    storageMode='supabase'; adminUser=data.session?.user||null;
+    await refreshData(); setBadge(); renderAuth(); renderAll();
+    notify('Supabase berhasil dihubungkan.');
+  }
+  $('connectSupabase').addEventListener('click',async()=>{
+    const url=$('supabaseUrl').value.trim(),key=$('supabaseKey').value.trim();
+    if(!url||!key){notify('Isi Project URL dan publishable/anon key terlebih dahulu.',true);return;}
+    try{await connectSupabase(url,key);}catch(e){storageMode='local';supabaseClient=null;setBadge();notify('Gagal menghubungkan: '+(e.message||e),true);}
+  });
+  async function refreshData() {
+    if(!supabaseClient){loadLocal();return;}
+    const [s,a,sch]=await Promise.all([
+      supabaseClient.from('students').select('*').order('name'),
+      supabaseClient.from('attendance').select('*').order('date',{ascending:false}),
+      supabaseClient.from('school_settings').select('*').limit(1)
+    ]);
+    if(s.error)throw new Error('Tabel students: '+s.error.message);
+    if(a.error)throw new Error('Tabel attendance: '+a.error.message);
+    students=s.data||[]; attendance=a.data||[];
+    if(sch.error)throw new Error('Tabel school_settings: '+sch.error.message);
+    if(sch.data?.[0]) school={...school,...sch.data[0]};
+    $('schoolName').value=school.name||'SMA Negeri 1 Terara';$('schoolAddress').value=school.address||'';$('schoolYear').value=school.year||'';
+  }
+  async function dbError(error){if(error)throw new Error(error.message||String(error));}
+  async function addAttendance(student,status='Hadir') {
+    const studentObj=students.find(s=>String(s.nis)===String(student));
+    if(!studentObj){notify('NIS tidak ditemukan. Periksa data siswa.',true);return;}
+    if(!isAdmin()){notify('Admin harus login untuk mencatat kehadiran.',true);go('admin');return;}
+    const date=today();
+    const existing=attendance.find(a=>String(a.nis)===String(studentObj.nis)&&a.date===date);
+    if(existing){notify(`${studentObj.name} sudah tercatat: ${existing.status}.`);return;}
+    const record={student_id:studentObj.id,nis:String(studentObj.nis),date,time:timeNow(),status};
+    if(supabaseClient){
+      const {error}=await supabaseClient.from('attendance').insert(record);
+      await dbError(error);
+      const {data,error:e}=await supabaseClient.from('attendance').select('*').eq('date',date).order('time',{ascending:false});
+      await dbError(e); attendance=attendance.filter(a=>a.date!==date).concat(data||[]);
+    }else{
+      record.id='local-'+Date.now();attendance.push(record);saveLocal();
+    }
+    $('scanStatus').textContent=`Berhasil: ${studentObj.name} (${studentObj.class_name}) — ${status}, ${record.time}`;
+    notify(`Kehadiran ${studentObj.name} berhasil dicatat.`);renderAll();
+  }
+  $('manualSubmit').addEventListener('click',async()=>{try{await addAttendance($('manualNis').value.trim());$('manualNis').value='';}catch(e){notify(e.message,true);}});
+  $('manualNis').addEventListener('keydown',e=>{if(e.key==='Enter')$('manualSubmit').click();});
+  $('startScan').addEventListener('click',async()=>{
+    if(!requireAdmin())return;
+    if(!window.Html5Qrcode){notify('Library pemindai QR belum termuat.',true);return;}
+    try{
+      if(!scanner)scanner=new Html5Qrcode('reader');
+      await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:230,height:230}},async decoded=>{
+        try{await scanner.pause(true);await addAttendance(decoded.trim());setTimeout(()=>scanner?.resume(),1600);}catch(e){notify(e.message,true);try{scanner.resume();}catch(_){}}
+      },()=>{});
+      $('scanStatus').textContent='Kamera aktif. Arahkan QR Code ke area pemindaian.';
+    }catch(e){notify('Kamera tidak dapat dibuka. Periksa izin kamera dan gunakan HTTPS.',true);}
+  });
+  $('stopScan').addEventListener('click',async()=>{if(scanner){try{if(scanner.isScanning)await scanner.stop();}catch(e){}$('scanStatus').textContent='Kamera dihentikan.';}});
+  function refreshQrSelect(){
+    const sel=$('qrStudentSelect'),old=sel.value;
+    sel.innerHTML='<option value="">Pilih siswa</option>'+students.map(s=>`<option value="${safe(s.nis)}">${safe(s.name)} — ${safe(s.nis)}</option>`).join('');
+    if(students.some(s=>String(s.nis)===old))sel.value=old;renderQr();
+  }
+  function renderQr(){
+    const nis=$('qrStudentSelect').value,student=students.find(s=>String(s.nis)===nis);
+    $('qrcode').innerHTML='';$('qrStudentName').textContent=student?.name||'Pilih siswa';$('qrStudentInfo').textContent=student?`NIS: ${student.nis} • Kelas ${student.class_name}`:'QR Code berdasarkan NIS';
+    if(student&&window.QRCode)new QRCode($('qrcode'),{text:String(student.nis),width:180,height:180,colorDark:'#123c2f',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H});
+  }
+  $('qrStudentSelect').addEventListener('change',renderQr);
+  $('printQr').addEventListener('click',()=>{if(!$('qrStudentSelect').value){notify('Pilih siswa terlebih dahulu.',true);return;}window.print();});
+
+  function renderDashboard(){
+    const date=today(),todayRecords=attendance.filter(a=>a.date===date);
+    const count=st=>todayRecords.filter(a=>a.status===st).length;
+    const present=count('Hadir'),izin=count('Izin'),sakit=count('Sakit'),alpa=Math.max(0,students.length-present-izin-sakit);
+    $('statStudents').textContent=students.length;$('statPresent').textContent=present;
+    $('presentSub').textContent=`${students.length?Math.round(present/students.length*100):0}% dari total siswa`;
+    $('statExcused').textContent=izin+sakit;$('statAbsent').textContent=alpa;
+    const ctx=$('attendanceChart');
+    if(chart)chart.destroy();
+    chart=new Chart(ctx,{type:'doughnut',data:{labels:['Hadir','Izin','Sakit','Belum tercatat'],datasets:[{data:[present,izin,sakit,alpa],backgroundColor:['#2c8055','#e7b34d','#5b8ed6','#dce5de'],borderWidth:0,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:7,padding:18,font:{size:11}}}}}});
+    const rows=todayRecords.slice().sort((a,b)=>(b.time||'').localeCompare(a.time||'')).slice(0,6);
+    $('recentRows').innerHTML=rows.length?rows.map(a=>{const s=students.find(x=>String(x.nis)===String(a.nis))||{};return `<tr><td><div class="student-cell"><div class="mini-avatar">${safe((s.name||'?').slice(0,1))}</div>${safe(s.name||'Siswa tidak ditemukan')}</div></td><td>${safe(a.nis)}</td><td>${safe(s.class_name||'-')}</td><td>${safe(a.time||'-')}</td><td>${statusPill(a.status)}</td></tr>`}).join(''):'<tr><td colspan="5" class="empty">Belum ada absensi hari ini.</td></tr>';
+  }
+  function statusPill(status){const cls=({'Hadir':'hadir','Izin':'izin','Sakit':'sakit','Alpa':'alpa'})[status]||'alpa';return `<span class="pill ${cls}">${safe(status||'Alpa')}</span>`;}
+  function refreshClassFilters(){
+    const classes=[...new Set(students.map(s=>s.class_name).filter(Boolean))].sort();
+    ['classFilter','reportClass'].forEach(id=>{const el=$(id),old=el.value;el.innerHTML='<option value="">Semua kelas</option>'+classes.map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join('');if(classes.includes(old))el.value=old;});
+  }
+  function renderStudents(){
+    refreshClassFilters();
+    const query=$('studentSearch').value.toLowerCase(),cls=$('classFilter').value;
+    const list=students.filter(s=>(!cls||s.class_name===cls)&&(`${s.name} ${s.nis}`.toLowerCase().includes(query))).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+    $('studentRows').innerHTML=list.length?list.map(s=>`<tr><td><div class="student-cell"><div class="mini-avatar">${safe((s.name||'?').slice(0,1))}</div>${safe(s.name)}</div></td><td>${safe(s.nis)}</td><td>${safe(s.class_name)}</td><td>${safe(s.gender||'-')}</td><td><button class="btn btn-light btn-small" data-qr="${safe(s.nis)}">Lihat QR</button></td><td><button class="btn btn-light btn-small" data-edit="${safe(s.id)}">Edit</button> <button class="btn btn-danger btn-small" data-delete="${safe(s.id)}">Hapus</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">Data siswa belum tersedia.</td></tr>';
+    $('studentRows').querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>editStudent(b.dataset.edit)));
+    $('studentRows').querySelectorAll('[data-delete]').forEach(b=>b.addEventListener('click',()=>deleteStudent(b.dataset.delete)));
+    $('studentRows').querySelectorAll('[data-qr]').forEach(b=>b.addEventListener('click',()=>{go('scan');$('qrStudentSelect').value=b.dataset.qr;renderQr();}));
+  }
+  $('studentSearch').addEventListener('input',renderStudents);$('classFilter').addEventListener('change',renderStudents);
+  function openStudentForm(){if(!requireAdmin())return;$('studentForm').reset();$('editStudentId').value='';$('studentFormTitle').textContent='Tambah siswa';$('studentFormWrap').classList.remove('hidden');$('studentNis').focus();}
+  $('addStudentBtn').addEventListener('click',openStudentForm);
+  $('cancelStudent').addEventListener('click',()=>$('studentFormWrap').classList.add('hidden'));
+  function editStudent(id){
+    if(!requireAdmin())return;const s=students.find(x=>String(x.id)===String(id));if(!s)return;
+    $('editStudentId').value=s.id;$('studentNis').value=s.nis;$('studentName').value=s.name;$('studentClass').value=s.class_name;$('studentGender').value=s.gender||'';
+    $('studentFormTitle').textContent='Edit data siswa';$('studentFormWrap').classList.remove('hidden');$('studentNis').focus();
+  }
+  $('studentForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(!requireAdmin())return;
+    const id=$('editStudentId').value,nis=$('studentNis').value.trim(),name=$('studentName').value.trim(),class_name=$('studentClass').value.trim(),gender=$('studentGender').value;
+    if(students.some(s=>String(s.nis)===nis&&String(s.id)!==String(id))){notify('NIS sudah digunakan siswa lain.',true);return;}
+    try{
+      if(supabaseClient){
+        if(id){const {error}=await supabaseClient.from('students').update({nis,name,class_name,gender}).eq('id',id);await dbError(error);}
+        else{const {error}=await supabaseClient.from('students').insert({nis,name,class_name,gender});await dbError(error);}
+        await refreshData();
+      }else{
+        if(id){students=students.map(s=>String(s.id)===String(id)?{...s,nis,name,class_name,gender}:s);}
+        else students.push({id:'local-'+Date.now(),nis,name,class_name,gender});
+        saveLocal();
+      }
+      $('studentFormWrap').classList.add('hidden');renderAll();notify('Data siswa berhasil disimpan.');
+    }catch(err){notify('Gagal menyimpan: '+err.message,true);}
+  });
+  async function deleteStudent(id){
+    if(!requireAdmin())return;const s=students.find(x=>String(x.id)===String(id));if(!s)return;
+    if(!confirm(`Hapus data siswa ${s.name}? Catatan kehadiran yang ada mungkin tetap tersimpan.`))return;
+    try{
+      if(supabaseClient){const {error}=await supabaseClient.from('students').delete().eq('id',id);await dbError(error);await refreshData();}
+      else{students=students.filter(x=>String(x.id)!==String(id));saveLocal();}
+      renderAll();notify('Data siswa dihapus.');
+    }catch(e){notify('Gagal menghapus: '+e.message,true);}
+  }
+  function reportRecords(){
+    const date=$('reportDate').value||today(),cls=$('reportClass').value,status=$('reportStatus').value;
+    const recordsByNis=new Map(attendance.filter(a=>a.date===date).map(a=>[String(a.nis),a]));
+    return students.filter(s=>!cls||s.class_name===cls).map(s=>{
+      const a=recordsByNis.get(String(s.nis));
+      return {nis:s.nis,name:s.name,class_name:s.class_name,date,time:a?.time||'-',status:a?.status||'Alpa',recordId:a?.id||null,student_id:s.id};
+    }).filter(r=>!status||r.status===status).sort((a,b)=>(a.class_name||'').localeCompare(b.class_name||'')||(a.name||'').localeCompare(b.name||''));
+  }
+  function renderReport(){
+    if(!$('reportDate').value)$('reportDate').value=today();
+    const all=reportRecords();
+    $('repHadir').textContent=all.filter(x=>x.status==='Hadir').length;$('repIzin').textContent=all.filter(x=>x.status==='Izin').length;
+    $('repSakit').textContent=all.filter(x=>x.status==='Sakit').length;$('repAlpa').textContent=all.filter(x=>x.status==='Alpa').length;
+    $('reportRows').innerHTML=all.length?all.map((r,i)=>`<tr><td>${i+1}</td><td>${safe(r.nis)}</td><td>${safe(r.name)}</td><td>${safe(r.class_name)}</td><td>${safe(r.date)}</td><td>${safe(r.time)}</td><td>${statusPill(r.status)}</td><td><select aria-label="Ubah status" data-status-nis="${safe(r.nis)}" style="border:1px solid #d9e3dc;border-radius:7px;padding:5px;font-size:11px" ${isAdmin()?'':'disabled'}><option ${r.status==='Hadir'?'selected':''}>Hadir</option><option ${r.status==='Izin'?'selected':''}>Izin</option><option ${r.status==='Sakit'?'selected':''}>Sakit</option><option ${r.status==='Alpa'?'selected':''}>Alpa</option></select></td></tr>`).join(''):'<tr><td colspan="8" class="empty">Tidak ada data untuk filter ini.</td></tr>';
+    $('reportRows').querySelectorAll('[data-status-nis]').forEach(el=>el.addEventListener('change',async()=>{
+      if(!requireAdmin()){renderReport();return;}
+      try{await setStatus(el.dataset.statusNis,$('reportDate').value,el.value);renderAll();notify('Status kehadiran diperbarui.');}catch(e){notify(e.message,true);}
+    }));
+  }
+  async function setStatus(nis,date,status){
+    const existing=attendance.find(a=>String(a.nis)===String(nis)&&a.date===date);
+    if(status==='Alpa'&&!existing)return;
+    if(supabaseClient){
+      if(existing&&status==='Alpa'){const {error}=await supabaseClient.from('attendance').delete().eq('id',existing.id);await dbError(error);}
+      else if(existing){const {error}=await supabaseClient.from('attendance').update({status}).eq('id',existing.id);await dbError(error);}
+      else{const {error}=await supabaseClient.from('attendance').insert({nis:String(nis),student_id:students.find(s=>String(s.nis)===String(nis))?.id,date,time:'-',status});await dbError(error);}
+      await refreshData();
+    }else{
+      if(existing&&status==='Alpa')attendance=attendance.filter(a=>a!==existing);
+      else if(existing)existing.status=status;
+      else attendance.push({id:'local-'+Date.now(),nis:String(nis),student_id:students.find(s=>String(s.nis)===String(nis))?.id,date,time:'-',status});
+      saveLocal();
+    }
+  }
+  $('applyReport').addEventListener('click',renderReport);$('reportDate').addEventListener('change',renderReport);$('reportClass').addEventListener('change',renderReport);$('reportStatus').addEventListener('change',renderReport);
+  $('exportPdf').addEventListener('click',()=>{
+    const rows=reportRecords();if(!window.jspdf?.jsPDF){notify('Library PDF belum termuat. Periksa koneksi internet.',true);return;}
+    const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(school.name||'SMA Negeri 1 Terara',14,15);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text('Rekap Kehadiran Siswa',14,22);
+    doc.text(`Tanggal: ${$('reportDate').value||today()}   Kelas: ${$('reportClass').value||'Semua kelas'}   Tahun Pelajaran: ${school.year||'-'}`,14,28);
+    if(school.address)doc.text(`Alamat: ${school.address}`,14,34);
+    const startY=school.address?40:35;let y=startY;
+    const cols=[14,25,55,125,155,185,215],heads=['No','NIS','Nama siswa','Kelas','Waktu','Status'];
+    doc.setFillColor(18,60,47);doc.setTextColor(255,255,255);doc.rect(14,y,269,8,'F');
+    heads.forEach((h,i)=>doc.text(h,cols[i],y+5.5));y+=8;doc.setTextColor(30,40,34);doc.setFontSize(9);
+    rows.forEach((r,i)=>{if(y>190){doc.addPage();y=18;}if(i%2===0){doc.setFillColor(242,247,243);doc.rect(14,y,269,7,'F');}
+      const vals=[String(i+1),String(r.nis),String(r.name).slice(0,42),String(r.class_name),String(r.time),String(r.status)];
+      vals.forEach((v,j)=>doc.text(v,cols[j],y+4.8));y+=7;
+    });
+    y+=7;doc.setFontSize(9);doc.text(`Total data: ${rows.length} | Hadir: ${rows.filter(r=>r.status==='Hadir').length} | Izin: ${rows.filter(r=>r.status==='Izin').length} | Sakit: ${rows.filter(r=>r.status==='Sakit').length} | Alpa: ${rows.filter(r=>r.status==='Alpa').length}`,14,y);
+    doc.save(`Rekap-Absensi-${$('reportDate').value||today()}.pdf`);
+  });
+
+  $('schoolForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(!requireAdmin())return;
+    school={...school,name:$('schoolName').value.trim(),address:$('schoolAddress').value.trim(),year:$('schoolYear').value.trim()};
+    try{
+      if(supabaseClient){
+        const {data,error}=await supabaseClient.from('school_settings').select('id').limit(1);await dbError(error);
+        if(data?.length){const {error:e2}=await supabaseClient.from('school_settings').update(school).eq('id',data[0].id);await dbError(e2);}
+        else{const {error:e2}=await supabaseClient.from('school_settings').insert(school);await dbError(e2);}
+      }else saveLocal();
+      notify('Identitas lembaga disimpan.');renderAll();
+    }catch(err){notify('Gagal menyimpan pengaturan: '+err.message,true);}
+  });
+  $('loginForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!supabaseClient){notify('Hubungkan Supabase terlebih dahulu di menu Lembaga.',true);go('settings');return;}
+    try{const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});await dbError(error);adminUser=data.user;renderAuth();renderAll();notify('Login admin berhasil.');}
+    catch(err){notify('Login gagal: '+err.message,true);}
+  });
+  $('logoutBtn').addEventListener('click',async()=>{
+    try{if(supabaseClient){const {error}=await supabaseClient.auth.signOut();await dbError(error);}adminUser=null;renderAuth();renderAll();notify('Anda telah logout.');go('dashboard');}
+    catch(e){notify('Logout gagal: '+e.message,true);}
+  });
+  function renderAuth(){
+    const logged=!!adminUser;$('loginPanel').classList.toggle('hidden',logged);$('loggedPanel').classList.toggle('hidden',!logged);
+    $('adminIdentity').textContent=adminUser?.email||'';$('userAvatar').textContent=logged?'AD':'ST';
+    $('authHeading').textContent=logged?'Administrator Aktif':'Login Administrator';
+  }
+  function renderAll(){setBadge();renderDashboard();renderStudents();refreshQrSelect();renderReport();renderAuth();}
+  // Demo data hanya untuk tampilan awal. Ganti dengan data asli melalui admin dan Supabase.
+  loadLocal();setBadge();renderAll();$('reportDate').value=today();
+  window.addEventListener('beforeunload',()=>{if(scanner?.isScanning)scanner.stop().catch(()=>{});});
+})();
+</script>
+</body>
+</html>
