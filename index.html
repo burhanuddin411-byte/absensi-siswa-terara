@@ -104,11 +104,14 @@
       <section class="page" id="page-reports">
         <div class="welcome"><div><h2>Rekap Laporan Kehadiran</h2><p>Filter data dan cetak laporan ke format PDF.</p></div><button class="btn btn-primary" id="exportPdf">↓ Unduh PDF</button></div>
         <div class="panel">
-          <div class="filters"><div class="field"><label for="reportDate">Tanggal</label><input type="date" id="reportDate"></div><div class="field"><label for="reportClass">Kelas</label><select id="reportClass"><option value="">Semua kelas</option></select></div><div class="field"><label for="reportStatus">Status</label><select id="reportStatus"><option value="">Semua status</option><option>Hadir</option><option>Izin</option><option>Sakit</option><option>Alpa</option></select></div><div class="field" style="align-self:end"><button class="btn btn-light" id="applyReport">Terapkan filter</button></div></div>
+          <div class="filters"><div class="field"><label for="reportDate">Rekap harian — tanggal</label><input type="date" id="reportDate"></div><div class="field"><label for="reportMonth">Rekap bulanan — bulan</label><input type="month" id="reportMonth"></div><div class="field"><label for="reportClass">Kelas</label><select id="reportClass"><option value="">Semua kelas</option></select></div><div class="field"><label for="reportStatus">Status</label><select id="reportStatus"><option value="">Semua status</option><option>Hadir</option><option>Izin</option><option>Sakit</option><option>Alpa</option></select></div><div class="field" style="align-self:end"><button class="btn btn-light" id="applyReport">Terapkan filter</button></div></div>
           <div class="stats" style="margin-top:5px"><div class="stat"><div class="stat-top">Hadir</div><strong id="repHadir">0</strong></div><div class="stat"><div class="stat-top">Izin</div><strong id="repIzin">0</strong></div><div class="stat"><div class="stat-top">Sakit</div><strong id="repSakit">0</strong></div><div class="stat"><div class="stat-top">Alpa / belum tercatat</div><strong id="repAlpa">0</strong></div></div>
+          <div class="panel-head" style="margin-top:16px"><div><h3>Ringkasan Bulanan per Siswa</h3><p>Jumlah hadir, izin, sakit, dan alpa pada bulan yang dipilih.</p></div><button class="btn btn-light btn-small" id="exportMonthlyCsv">Unduh CSV bulanan</button></div>
+          <div class="table-wrap"><table><thead><tr><th>No.</th><th>NIS</th><th>Nama siswa</th><th>Kelas</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpa</th><th>Total hari</th></tr></thead><tbody id="monthlyRows"></tbody></table></div>
+          <div class="panel-head" style="margin-top:16px"><div><h3>Detail Harian</h3><p>Detail untuk tanggal yang dipilih.</p></div></div>
           <div class="table-wrap"><table><thead><tr><th>No.</th><th>NIS</th><th>Nama siswa</th><th>Kelas</th><th>Tanggal</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="reportRows"></tbody></table></div>
         </div>
-        <p class="footer-note">PDF dihasilkan pada perangkat Anda. Rekap mencakup siswa pada kelas/tanggal terpilih. Status Alpa adalah siswa yang belum memiliki catatan hadir, izin, atau sakit pada tanggal tersebut.</p>
+        <p class="footer-note">PDF harian dihasilkan pada perangkat Anda. Rekap harian menghitung siswa tanpa catatan sebagai Alpa. Rekap bulanan saat ini menghitung Alpa berdasarkan tanggal yang memiliki catatan absensi di bulan terpilih; untuk akurasi resmi, sekolah perlu menetapkan kalender hari efektif dan mencatat status seluruh siswa setiap hari.</p>
       </section>
 
       <section class="page" id="page-settings">
@@ -173,7 +176,14 @@
     setTimeout(()=>el.classList.add('hidden'),3500);
   };
   const isAdmin = () => !!adminUser;
-  const requireAdmin = () => { if(!isAdmin()){notify('Silakan login sebagai admin terlebih dahulu.',true);go('admin');return false;} return true; };
+  async function verifyAdminUser(user) {
+    if(!supabaseClient || !user) return null;
+    const {data,error}=await supabaseClient.from('admin_users').select('user_id,role').eq('user_id',user.id).maybeSingle();
+    if(error) throw new Error('Tidak dapat memverifikasi hak admin: '+error.message);
+    if(!data || !['admin','operator'].includes(data.role)) return null;
+    return user;
+  }
+  const requireAdmin = () => { if(!isAdmin()){notify('Akun ini belum memiliki hak admin yang disahkan database.',true);go('admin');return false;} return true; };
   const setBadge = () => { $('connectionBadge').textContent=storageMode==='supabase'?'Supabase terhubung':'Mode demo lokal'; };
   function go(page) {
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -196,7 +206,9 @@
     supabaseClient=window.supabase.createClient(url.trim(),key.trim());
     const {data,error}=await supabaseClient.auth.getSession();
     if(error)throw error;
-    storageMode='supabase'; adminUser=data.session?.user||null;
+    storageMode='supabase';
+    adminUser=null;
+    if(data.session?.user) adminUser=await verifyAdminUser(data.session.user);
     await refreshData(); setBadge(); renderAuth(); renderAll();
     notify('Supabase berhasil dihubungkan.');
   }
@@ -229,10 +241,10 @@
     if(existing){notify(`${studentObj.name} sudah tercatat: ${existing.status}.`);return;}
     const record={student_id:studentObj.id,nis:String(studentObj.nis),date,time:timeNow(),status};
     if(supabaseClient){
-      const {error}=await supabaseClient.from('attendance').insert(record);
+      const {data,error}=await supabaseClient.rpc('record_attendance',{p_nis:String(studentObj.nis),p_status:status});
       await dbError(error);
-      const {data,error:e}=await supabaseClient.from('attendance').select('*').eq('date',date).order('time',{ascending:false});
-      await dbError(e); attendance=attendance.filter(a=>a.date!==date).concat(data||[]);
+      if(data && data.ok===false) throw new Error(data.message||'Absensi ditolak server.');
+      await refreshData();
     }else{
       record.id='local-'+Date.now();attendance.push(record);saveLocal();
     }
@@ -336,8 +348,22 @@
       return {nis:s.nis,name:s.name,class_name:s.class_name,date,time:a?.time||'-',status:a?.status||'Alpa',recordId:a?.id||null,student_id:s.id};
     }).filter(r=>!status||r.status===status).sort((a,b)=>(a.class_name||'').localeCompare(b.class_name||'')||(a.name||'').localeCompare(b.name||''));
   }
+  function monthlySummary(){
+    const month=$('reportMonth').value||(today().slice(0,7)),cls=$('reportClass').value;
+    const records=attendance.filter(a=>String(a.date||'').startsWith(month));
+    return students.filter(s=>!cls||s.class_name===cls).map(s=>{
+      const own=records.filter(a=>String(a.nis)===String(s.nis));
+      const count=status=>own.filter(a=>a.status===status).length;
+      // Alpa dihitung dari hari sekolah yang memiliki setidaknya satu catatan absensi.
+      const schoolDays=[...new Set(records.map(a=>a.date))].length;
+      return {nis:s.nis,name:s.name,class_name:s.class_name,hadir:count('Hadir'),izin:count('Izin'),sakit:count('Sakit'),alpa:Math.max(0,schoolDays-count('Hadir')-count('Izin')-count('Sakit'))};
+    }).sort((a,b)=>(a.class_name||'').localeCompare(b.class_name||'')||(a.name||'').localeCompare(b.name||''));
+  }
   function renderReport(){
     if(!$('reportDate').value)$('reportDate').value=today();
+    if(!$('reportMonth').value)$('reportMonth').value=today().slice(0,7);
+    const summary=monthlySummary();
+    $('monthlyRows').innerHTML=summary.length?summary.map((r,i)=>`<tr><td>${i+1}</td><td>${safe(r.nis)}</td><td>${safe(r.name)}</td><td>${safe(r.class_name)}</td><td>${r.hadir}</td><td>${r.izin}</td><td>${r.sakit}</td><td>${r.alpa}</td><td>${r.hadir+r.izin+r.sakit+r.alpa}</td></tr>`).join(''):'<tr><td colspan="9" class="empty">Belum ada data siswa.</td></tr>';
     const all=reportRecords();
     $('repHadir').textContent=all.filter(x=>x.status==='Hadir').length;$('repIzin').textContent=all.filter(x=>x.status==='Izin').length;
     $('repSakit').textContent=all.filter(x=>x.status==='Sakit').length;$('repAlpa').textContent=all.filter(x=>x.status==='Alpa').length;
@@ -362,7 +388,12 @@
       saveLocal();
     }
   }
-  $('applyReport').addEventListener('click',renderReport);$('reportDate').addEventListener('change',renderReport);$('reportClass').addEventListener('change',renderReport);$('reportStatus').addEventListener('change',renderReport);
+  $('applyReport').addEventListener('click',renderReport);$('reportDate').addEventListener('change',renderReport);$('reportMonth').addEventListener('change',renderReport);$('reportClass').addEventListener('change',renderReport);$('reportStatus').addEventListener('change',renderReport);
+  $('exportMonthlyCsv').addEventListener('click',()=>{
+    const month=$('reportMonth').value||today().slice(0,7),rows=monthlySummary();
+    const csv=[['NIS','Nama siswa','Kelas','Hadir','Izin','Sakit','Alpa','Total hari'],...rows.map(r=>[r.nis,r.name,r.class_name,r.hadir,r.izin,r.sakit,r.alpa,r.hadir+r.izin+r.sakit+r.alpa])].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Rekap-Bulanan-${month}.csv`;a.click();URL.revokeObjectURL(url);
+  });
   $('exportPdf').addEventListener('click',()=>{
     const rows=reportRecords();if(!window.jspdf?.jsPDF){notify('Library PDF belum termuat. Periksa koneksi internet.',true);return;}
     const {jsPDF}=window.jspdf;const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
@@ -397,7 +428,7 @@
   $('loginForm').addEventListener('submit',async e=>{
     e.preventDefault();
     if(!supabaseClient){notify('Hubungkan Supabase terlebih dahulu di menu Lembaga.',true);go('settings');return;}
-    try{const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});await dbError(error);adminUser=data.user;renderAuth();renderAll();notify('Login admin berhasil.');}
+    try{const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});await dbError(error);adminUser=await verifyAdminUser(data.user);if(!adminUser){await supabaseClient.auth.signOut();throw new Error('Akun berhasil login, tetapi belum didaftarkan sebagai admin/operator di tabel admin_users.');}await refreshData();renderAuth();renderAll();notify('Login admin berhasil.');}
     catch(err){notify('Login gagal: '+err.message,true);}
   });
   $('logoutBtn').addEventListener('click',async()=>{
@@ -411,7 +442,7 @@
   }
   function renderAll(){setBadge();renderDashboard();renderStudents();refreshQrSelect();renderReport();renderAuth();}
   // Demo data hanya untuk tampilan awal. Ganti dengan data asli melalui admin dan Supabase.
-  loadLocal();setBadge();renderAll();$('reportDate').value=today();
+  loadLocal();setBadge();renderAll();$('reportDate').value=today();$('reportMonth').value=today().slice(0,7);
   window.addEventListener('beforeunload',()=>{if(scanner?.isScanning)scanner.stop().catch(()=>{});});
 })();
 </script>
