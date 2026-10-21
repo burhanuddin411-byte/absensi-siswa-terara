@@ -191,15 +191,39 @@
   document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
   $('todayLabel').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 
-  async function connectSupabase(url,key) {
-    if(!window.supabase?.createClient) throw new Error('Library Supabase belum termuat. Periksa koneksi internet.');
-    supabaseClient=window.supabase.createClient(url.trim(),key.trim());
-    const {data,error}=await supabaseClient.auth.getSession();
-    if(error)throw error;
-    storageMode='supabase'; adminUser=data.session?.user||null;
-    await refreshData(); setBadge(); renderAuth(); renderAll();
-    notify('Supabase berhasil dihubungkan.');
+ async function connectSupabase(url, key) {
+  if (!window.supabase?.createClient) {
+    throw new Error('Library Supabase belum termuat.');
   }
+
+  supabaseClient = window.supabase.createClient(
+    url.trim(),
+    key.trim()
+  );
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) throw error;
+
+  storageMode = 'supabase';
+  adminUser = data.session?.user || null;
+
+  if (adminUser) {
+    await refreshData();
+  } else {
+    students = [];
+    attendance = [];
+  }
+
+  setBadge();
+  renderAuth();
+  renderAll();
+
+  notify(
+    adminUser
+      ? 'Supabase terhubung dan admin aktif.'
+      : 'Supabase terhubung. Silakan login admin.'
+  );
+}
   $('connectSupabase').addEventListener('click',async()=>{
     const url=$('supabaseUrl').value.trim(),key=$('supabaseKey').value.trim();
     if(!url||!key){notify('Isi Project URL dan publishable/anon key terlebih dahulu.',true);return;}
@@ -397,7 +421,11 @@
   $('loginForm').addEventListener('submit',async e=>{
     e.preventDefault();
     if(!supabaseClient){notify('Hubungkan Supabase terlebih dahulu di menu Lembaga.',true);go('settings');return;}
-    try{const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});await dbError(error);adminUser=data.user;renderAuth();renderAll();notify('Login admin berhasil.');}
+    try{const {data,error}=await supabaseClient.auth.signInWithPassword({email:$('adminEmail').value.trim(),password:$('adminPassword').value});await dbError(error);adminUser = data.user;
+await refreshData();
+renderAuth();
+renderAll();
+notify('Login admin berhasil.');}
     catch(err){notify('Login gagal: '+err.message,true);}
   });
   $('logoutBtn').addEventListener('click',async()=>{
