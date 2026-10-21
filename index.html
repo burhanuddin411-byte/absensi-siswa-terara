@@ -177,12 +177,13 @@
   };
   const isAdmin = () => !!adminUser;
   async function verifyAdminUser(user) {
-    if(!supabaseClient || !user) return null;
-    const {data,error}=await supabaseClient.from('admin_users').select('user_id,role').eq('user_id',user.id).maybeSingle();
-    if(error) throw new Error('Tidak dapat memverifikasi hak admin: '+error.message);
-    if(!data || !['admin','operator'].includes(data.role)) return null;
-    return user;
-  }
+  if(!supabaseClient || !user) return null;
+  // Mengubah user_id menjadi id
+  const {data,error}=await supabaseClient.from('admin_users').select('id,role').eq('id',user.id).maybeSingle();
+  if(error) throw new Error('Tidak dapat memverifikasi hak admin: '+error.message);
+  if(!data || !['admin','operator'].includes(data.role)) return null;
+  return user;
+}
   const requireAdmin = () => { if(!isAdmin()){notify('Akun ini belum memiliki hak admin yang disahkan database.',true);go('admin');return false;} return true; };
   const setBadge = () => { $('connectionBadge').textContent=storageMode==='supabase'?'Supabase terhubung':'Mode demo lokal'; };
   function go(page) {
